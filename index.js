@@ -1,22 +1,35 @@
-import express from "express";
-import { createProxyMiddleware } from "http-proxy-middleware";
+import http from 'http';
+import net from 'net';
+import url from 'url';
 
-const app = express();
+const VPS_HOST = '34.174.119.160'; // IP del VPS
+const VPS_PORT = 22;
 
-const VPS_HOST = "http://34.174.119.160"; // Asegúrate que esté escuchando en puerto 80
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('Proxy Cloud Run Ready\n');
+});
 
-app.use("/", createProxyMiddleware({
-  target: VPS_HOST,
-  changeOrigin: true,
-  ws: true, // WebSocket compatible
-  onError: (err, req, res) => {
-    console.error("Proxy error:", err.message);
-    res.writeHead(502);
-    res.end("Bad Gateway");
-  }
-}));
+// Manejo de solicitudes tipo CONNECT (túnel TCP)
+server.on('connect', (req, clientSocket, head) => {
+  const { port, hostname } = url.parse(`//${req.url}`, false, true);
+  const targetPort = port || VPS_PORT;
+  const targetHost = hostname || VPS_HOST;
+
+  const serverSocket = net.connect(targetPort, targetHost, () => {
+    clientSocket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
+    serverSocket.write(head);
+    serverSocket.pipe(clientSocket);
+    clientSocket.pipe(serverSocket);
+  });
+
+  serverSocket.on('error', (err) => {
+    console.error('Server socket error:', err);
+    clientSocket.end('HTTP/1.1 502 Bad Gateway\r\n\r\n');
+  });
+});
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`✅ Proxy funcionando en puerto ${PORT}`);
+server.listen(PORT, () => {
+  console.log('Servidor proxy en Cloud Run escuchando en puerto', PORT);
 });
