@@ -1,12 +1,9 @@
 {
-  "name": "proxy-vps",
-  "type": "module",
+  "name": "proxy-vps-cloudrun",
+  "version": "1.0.0",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
-  "dependencies": {
-    "express": "^4.18.2",
-    "http-proxy-middleware": "^2.0.6"
-  }
+  "dependencies": {}
 }
