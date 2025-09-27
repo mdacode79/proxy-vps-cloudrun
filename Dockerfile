@@ -1,6 +1,7 @@
-FROM node:18
-WORKDIR /app
-COPY . .
-RUN npm install
+FROM teddysun/v2ray:latest
+
 EXPOSE 8080
-CMD ["node", "index.js"]
+
+COPY config.json /etc/v2ray/config.json
+
+CMD ["v2ray", "run", "-config", "/etc/v2ray/config.json"]
